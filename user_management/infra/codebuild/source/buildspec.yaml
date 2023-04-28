@@ -1,0 +1,27 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto11
+    commands:
+      - echo "Install the AWS CLI"
+      - apt-get update
+      - apt-get install -y python3-pip
+      - pip3 install awscli
+  pre_build:
+    commands:
+      - echo "Starting Maven build"
+      - mvn package
+  build:
+    commands:
+      - echo "Build completed, publishing Docker image to ECR"
+      - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
+      - docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+      - docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+  post_build:
+    commands:
+      - echo "Build completed"
+artifacts:
+  files:
+    - docker/$APP_JAR_NAME
